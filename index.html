@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Asistencia QR</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+
+<style>
+body{background:#f4f6f9}
+.card{border-radius:15px}
+#reader{max-width:500px;margin:auto}
+</style>
+</head>
+<body>
+<div class="container py-4">
+<h2>🎓 Sistema Simplificado de Estudiantes y Asistencia QR</h2>
+
+<div class="mb-3">
+<button class="btn btn-success" onclick="nuevo()">Nuevo Estudiante</button>
+<button class="btn btn-primary" onclick="exportar()">Exportar Backup</button>
+<input type="file" id="importar" hidden>
+<button class="btn btn-warning" onclick="document.getElementById('importar').click()">Importar Backup</button>
+</div>
+
+<div class="row mb-3">
+<div class="col"><div class="card p-3"><b>Total Estudiantes:</b> <span id="total"></span></div></div>
+<div class="col"><div class="card p-3"><b>Total Asistencias:</b> <span id="tasist"></span></div></div>
+</div>
+
+<div class="card p-3 mb-3">
+<table class="table table-bordered">
+<thead><tr>
+<th>DNI</th><th>Nombres</th><th>Apellidos</th><th>Edad</th><th>Teléfono</th><th>Acciones</th>
+</tr></thead>
+<tbody id="tb"></tbody>
+</table>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="card p-3">
+<h4>📷 Escáner QR</h4>
+<div id="reader"></div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="card p-3">
+<h4>📅 Calendario</h4>
+<div id="calendar"></div>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const base=[
+{dni:"74581236",nombres:"Carlos",apellidos:"Quispe",edad:19,telefono:"987654321"},
+{dni:"73214589",nombres:"Maria",apellidos:"Rojas",edad:20,telefono:"956321478"},
+{dni:"78123654",nombres:"Luis",apellidos:"Gomez",edad:21,telefono:"978456123"},
+{dni:"79854123",nombres:"Ana",apellidos:"Mendoza",edad:18,telefono:"945678912"},
+{dni:"71236548",nombres:"Jorge",apellidos:"Castillo",edad:22,telefono:"934567891"},
+{dni:"75698412",nombres:"Daniela",apellidos:"Ramirez",edad:19,telefono:"923456789"},
+{dni:"74125896",nombres:"Miguel",apellidos:"Sanchez",edad:20,telefono:"912345678"},
+{dni:"78963214",nombres:"Valeria",apellidos:"Herrera",edad:18,telefono:"901234567"},
+{dni:"72415896",nombres:"Jose",apellidos:"Vargas",edad:23,telefono:"998877665"},
+{dni:"73698541",nombres:"Camila",apellidos:"Torres",edad:21,telefono:"977665544"},
+{dni:"75896321",nombres:"Diego",apellidos:"Navarro",edad:20,telefono:"966554433"},
+{dni:"72147895",nombres:"Andrea",apellidos:"Ponce",edad:19,telefono:"955443322"},
+{dni:"74321698",nombres:"Kevin",apellidos:"Cardenas",edad:22,telefono:"944332211"},
+{dni:"76985214",nombres:"Gabriela",apellidos:"Aguilar",edad:18,telefono:"933221100"},
+{dni:"71478523",nombres:"Fernando",apellidos:"Morales",edad:24,telefono:"922110099"},
+{dni:"73521489",nombres:"Paola",apellidos:"Leon",edad:20,telefono:"911009988"},
+{dni:"78214563",nombres:"Cristian",apellidos:"Espinoza",edad:21,telefono:"900998877"},
+{dni:"72965841",nombres:"Brenda",apellidos:"Alarcon",edad:19,telefono:"989887766"},
+{dni:"74632158",nombres:"Renato",apellidos:"Valdez",edad:22,telefono:"978776655"},
+{dni:"71896542",nombres:"Karla",apellidos:"Fuentes",edad:20,telefono:"967665544"}
+];
+
+let estudiantes=JSON.parse(localStorage.getItem("estudiantes"))||base;
+let asistencias=JSON.parse(localStorage.getItem("asistencias"))||[];
+let calendar;
+
+function guardar(){
+localStorage.setItem("estudiantes",JSON.stringify(estudiantes));
+localStorage.setItem("asistencias",JSON.stringify(asistencias));
+}
+
+function render(){
+tb.innerHTML="";
+estudiantes.forEach((e,i)=>{
+tb.innerHTML+=`<tr>
+<td>${e.dni}</td><td>${e.nombres}</td><td>${e.apellidos}</td>
+<td>${e.edad}</td><td>${e.telefono}</td>
+<td>
+<button class='btn btn-sm btn-primary' onclick='editar(${i})'>Editar</button>
+<button class='btn btn-sm btn-danger' onclick='eliminarEst(${i})'>Eliminar</button>
+</td></tr>`;
+});
+document.getElementById("total").innerText=estudiantes.length;
+document.getElementById("tasist").innerText=asistencias.length;
+guardar();
+}
+
+async function nuevo(){
+const r=await Swal.fire({
+title:"Nuevo Estudiante",
+html:`<input id=dni class='swal2-input' placeholder='DNI'>
+<input id=nom class='swal2-input' placeholder='Nombres'>
+<input id=ape class='swal2-input' placeholder='Apellidos'>`,
+preConfirm:()=>({dni:dni.value,nombres:nom.value,apellidos:ape.value,edad:18,telefono:""})
+});
+if(r.isConfirmed){estudiantes.push(r.value);render();}
+}
+
+function editar(i){
+Swal.fire({
+title:"Editar Nombre",
+input:"text",
+inputValue:estudiantes[i].nombres
+}).then(r=>{
+if(r.isConfirmed){estudiantes[i].nombres=r.value;render();}
+});
+}
+
+function eliminarEst(i){
+Swal.fire({title:"¿Eliminar?",showCancelButton:true}).then(r=>{
+if(r.isConfirmed){estudiantes.splice(i,1);render();}
+});
+}
+
+function exportar(){
+const contenido="const backup="+JSON.stringify({estudiantes,asistencias},null,2);
+const blob=new Blob([contenido],{type:"application/javascript"});
+const a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="backup.js";
+a.click();
+}
+
+document.getElementById("importar").addEventListener("change",e=>{
+const f=e.target.files[0];
+const rd=new FileReader();
+rd.onload=()=>{
+try{
+eval(rd.result);
+estudiantes=backup.estudiantes||[];
+asistencias=backup.asistencias||[];
+render();
+calendar.refetchEvents();
+}catch(err){alert("Archivo inválido");}
+};
+rd.readAsText(f);
+});
+
+document.addEventListener("DOMContentLoaded",()=>{
+render();
+
+calendar=new FullCalendar.Calendar(document.getElementById("calendar"),{
+initialView:"dayGridMonth",
+events:(info,ok)=>{
+ok(asistencias.map(a=>({title:a.nombre,start:a.fecha})));
+}
+});
+calendar.render();
+
+const qr=new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
+qr.render((txt)=>{
+const e=estudiantes.find(x=>x.dni===txt);
+if(e){
+const fecha=new Date().toISOString().split("T")[0];
+asistencias.push({dni:e.dni,nombre:e.nombres+" "+e.apellidos,fecha});
+guardar();
+render();
+calendar.refetchEvents();
+Swal.fire("Asistencia registrada",e.nombres,"success");
+}else{
+Swal.fire("No encontrado","DNI inexistente","error");
+}
+});
+});
+</script>
+</body>
+</html>
